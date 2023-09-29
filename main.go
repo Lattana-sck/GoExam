@@ -177,6 +177,36 @@ func getUserLevel(ip string, port int) {
 	fmt.Printf("http://10.49.122.144:%d/getUserLevel : %s\n", port, string(responseBody))
 }
 
+func getUserPoints(ip string, port int) {
+
+	url := fmt.Sprintf("http://%s:%d/getUserPoints", ip, port)
+
+	data := map[string]string{
+		"User":   "Lattana",
+		"Secret": userSecret,
+	}
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		fmt.Println("Erreur lors de la conversion en JSON:", err)
+		return
+	}
+
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		fmt.Println("Erreur lors de la requête POST:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	responseBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Erreur lors de la lecture de la réponse POST:", err)
+		return
+	}
+
+	fmt.Printf("http://10.49.122.144:%d/getUserPoints : %s\n", port, string(responseBody))
+}
+
 func main() {
 	ip := "10.49.122.144"
 	var wg sync.WaitGroup
@@ -211,6 +241,7 @@ func main() {
 	secretWg.Wait()
 
 	go getUserLevel(ip, rightPort)
+    go getUserPoints(ip, rightPort)
 
 	app := fiber.New()
 	app.Listen(":3000")
