@@ -111,6 +111,32 @@ func check(ip string, port int) {
 	fmt.Printf("http://10.49.122.144:%d/check : %s\n", port, string(responseBody))
 }
 
+func getUserSecret (ip string, port int) {
+    url := fmt.Sprintf("http://%s:%d/getUserSecret", ip, port)
+
+	data := map[string]string{"User": "Lattana"}
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		fmt.Println("Erreur lors de la conversion en JSON:", err)
+		return
+	}
+
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		fmt.Println("Erreur lors de la requête POST:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	responseBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Erreur lors de la lecture de la réponse POST:", err)
+		return
+	}
+
+	fmt.Printf("http://10.49.122.144:%d/getUserSecret : %s\n", port, string(responseBody))
+}
+
 func main() {
 	ip := "10.49.122.144"
 	var wg sync.WaitGroup
@@ -132,7 +158,7 @@ func main() {
 	}
 	go signUp(ip, rightPort)
 	go check(ip, rightPort)
-
+    go getUserSecret(ip, rightPort)
 
 	app := fiber.New()
 	app.Listen(":3000")
