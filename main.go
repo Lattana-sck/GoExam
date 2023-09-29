@@ -286,7 +286,7 @@ func main() {
 	pointsWg.Add(1)
 	go func() {
 		defer pointsWg.Done()
-		go getUserPoints(ip, rightPort)
+		getUserPoints(ip, rightPort)
 	}()
 
 	pointsWg.Wait()
