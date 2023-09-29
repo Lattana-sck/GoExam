@@ -288,10 +288,17 @@ func main() {
 		defer pointsWg.Done()
 		getUserPoints(ip, rightPort)
 	}()
-
 	pointsWg.Wait()
+    
+    var hintWg sync.WaitGroup
 
-	go getHint(ip, rightPort)
+	hintWg.Add(1)
+	go func() {
+        defer hintWg.Done()
+        getHint(ip, rightPort)
+    }()
+    hintWg.Wait()
+    
 	app := fiber.New()
 	app.Listen(":3000")
 }
