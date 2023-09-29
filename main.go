@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -140,6 +141,7 @@ func getUserSecret(ip string, port int) {
 			fmt.Printf("http://10.49.122.144:%d/getUserSecret : %s\n", port, string(responseBody))
 			mutex.Lock()
 			userSecret = string(responseBody)[13:]
+			userSecret = strings.TrimRight(userSecret, "\n")
 			mutex.Unlock()
 			break
 		}
@@ -269,9 +271,27 @@ func main() {
 
 	secretWg.Wait()
 
-	go getUserLevel(ip, rightPort)
-	go getUserPoints(ip, rightPort)
+	var levelWg sync.WaitGroup
 
+	levelWg.Add(1)
+	go func() {
+		defer levelWg.Done()
+		getUserLevel(ip, rightPort)
+	}()
+
+	levelWg.Wait()
+
+	var pointsWg sync.WaitGroup
+
+	pointsWg.Add(1)
+	go func() {
+		defer pointsWg.Done()
+		go getUserPoints(ip, rightPort)
+	}()
+
+	pointsWg.Wait()
+
+	go getHint(ip, rightPort)
 	app := fiber.New()
 	app.Listen(":3000")
 }
