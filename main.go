@@ -20,8 +20,9 @@ const (
 )
 
 var (
-	rightPort int
-	mutex     sync.Mutex
+	rightPort  int
+	userSecret string
+	mutex      sync.Mutex
 )
 
 func scanPort(ip string, port int, wg *sync.WaitGroup, openPorts chan int) {
@@ -111,10 +112,44 @@ func check(ip string, port int) {
 	fmt.Printf("http://10.49.122.144:%d/check : %s\n", port, string(responseBody))
 }
 
-func getUserSecret (ip string, port int) {
-    url := fmt.Sprintf("http://%s:%d/getUserSecret", ip, port)
+func getUserSecret(ip string, port int) {
+	for {
+		url := fmt.Sprintf("http://%s:%d/getUserSecret", ip, port)
 
-	data := map[string]string{"User": "Lattana"}
+		data := map[string]string{"User": "Lattana"}
+		jsonData, err := json.Marshal(data)
+		if err != nil {
+			fmt.Println("Erreur lors de la conversion en JSON:", err)
+			return
+		}
+
+		resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
+		if err != nil {
+			fmt.Println("Erreur lors de la requête POST:", err)
+			return
+		}
+		defer resp.Body.Close()
+
+		responseBody, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Println("Erreur lors de la lecture de la réponse POST:", err)
+			return
+		}
+        
+		if string(responseBody) != "Really don't feel like working today huh..." {
+			fmt.Printf("http://10.49.122.144:%d/getUserSecret : %s\n", port, string(responseBody))
+			break
+		}
+	}
+}
+
+func getUserLevel(ip string, port int) {
+	url := fmt.Sprintf("http://%s:%d/getUserLevel", ip, port)
+
+	data := map[string]string{
+		"User":   "Lattana",
+		"Secret": userSecret,
+	}
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		fmt.Println("Erreur lors de la conversion en JSON:", err)
@@ -156,10 +191,11 @@ func main() {
 	for openPort := range openPorts {
 		fmt.Printf("Port ouvert : %d\n", openPort)
 	}
+
 	go signUp(ip, rightPort)
 	go check(ip, rightPort)
-    go getUserSecret(ip, rightPort)
-
+	go getUserSecret(ip, rightPort)
+	go getUserLevel(ip, rightPort)
 	app := fiber.New()
 	app.Listen(":3000")
 }
