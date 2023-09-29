@@ -135,15 +135,20 @@ func getUserSecret(ip string, port int) {
 			fmt.Println("Erreur lors de la lecture de la réponse POST:", err)
 			return
 		}
-        
+
 		if string(responseBody) != "Really don't feel like working today huh..." {
 			fmt.Printf("http://10.49.122.144:%d/getUserSecret : %s\n", port, string(responseBody))
+			mutex.Lock()
+			userSecret = string(responseBody)
+            userSecret = userSecret[13:]
+			mutex.Unlock()
 			break
 		}
 	}
 }
 
 func getUserLevel(ip string, port int) {
+
 	url := fmt.Sprintf("http://%s:%d/getUserLevel", ip, port)
 
 	data := map[string]string{
@@ -169,7 +174,7 @@ func getUserLevel(ip string, port int) {
 		return
 	}
 
-	fmt.Printf("http://10.49.122.144:%d/getUserSecret : %s\n", port, string(responseBody))
+	fmt.Printf("http://10.49.122.144:%d/getUserLevel : %s\n", port, string(responseBody))
 }
 
 func main() {
@@ -194,8 +199,21 @@ func main() {
 
 	go signUp(ip, rightPort)
 	go check(ip, rightPort)
-	go getUserSecret(ip, rightPort)
+
+	// Utilisez une WaitGroup pour synchroniser getUserSecret et getUserLevel
+	var secretWg sync.WaitGroup
+
+	secretWg.Add(1)
+	go func() {
+		defer secretWg.Done()
+		getUserSecret(ip, rightPort)
+	}()
+
+	// Attendez que getUserSecret se termine avant de lancer getUserLevel
+	secretWg.Wait()
+
 	go getUserLevel(ip, rightPort)
+
 	app := fiber.New()
 	app.Listen(":3000")
 }
