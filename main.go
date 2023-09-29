@@ -200,7 +200,6 @@ func main() {
 	go signUp(ip, rightPort)
 	go check(ip, rightPort)
 
-	// Utilisez une WaitGroup pour synchroniser getUserSecret et getUserLevel
 	var secretWg sync.WaitGroup
 
 	secretWg.Add(1)
@@ -209,7 +208,6 @@ func main() {
 		getUserSecret(ip, rightPort)
 	}()
 
-	// Attendez que getUserSecret se termine avant de lancer getUserLevel
 	secretWg.Wait()
 
 	go getUserLevel(ip, rightPort)
